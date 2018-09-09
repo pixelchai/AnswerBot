@@ -64,10 +64,11 @@ class AnswerBot:
         if root.lemma_=='be':
             if root.n_lefts>0 and root.n_rights>0:
                 # (...) is (...)?
-                # atm discard LHS
-                # todo: improve.
                 for right in root.rights:
                     ret.extend(self.parse_children(right))
+                # parse left after right
+                for left in root.lefts:
+                    ret.extend(self.parse_children(left))
         else:
             # children tokens to ignore
             ignore_deps=[
@@ -129,4 +130,4 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("kangaroo's home country")
+    AnswerBot().parse_question("How old is Obama")
