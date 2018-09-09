@@ -62,7 +62,12 @@ class AnswerBot:
         ret=[]
 
         if root.lemma_=='be':
-            pass
+            if root.n_lefts>0 and root.n_rights>0:
+                # (...) is (...)?
+                # atm discard LHS
+                # todo: improve.
+                for right in root.rights:
+                    ret.extend(self.parse_children(right))
         else:
             # children tokens to ignore
             ignore_deps=[
@@ -70,7 +75,7 @@ class AnswerBot:
                 'punct',
                 'det',
                 'auxpass',
-                'advmod'
+                # do not ignore advmod
             ]
             # children tokens to be prepended (to the ROOT)
             pre_deps=[
@@ -107,7 +112,8 @@ class AnswerBot:
 
             if not skip_root:
                 if root.pos_!='VERB':
-                    ret.append(root)
+                    if not root.dep_ in ignore_deps:
+                        ret.append(root)
 
             # after root
             for child in root.children:
@@ -123,4 +129,4 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("Which country is home to the kangaroo?")
+    AnswerBot().parse_question("kangaroo's home country")
