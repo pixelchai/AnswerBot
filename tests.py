@@ -17,6 +17,8 @@ class QuestionParsing(unittest.TestCase):
     def test_a_basic(self):
         bot=AnswerBot(debug=False)
         self.assertParsed(bot,"Obama's age",[['Obama','age']])
+        self.assertParsed(bot,"Obama's dad's age",[['Obama','dad','age']])
+        self.assertParsed(bot,"the biggest animal",[['animal','biggest']])
 
 if __name__=='__main__':
     unittest.main(verbosity=2)

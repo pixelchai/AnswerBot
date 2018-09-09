@@ -55,27 +55,50 @@ class AnswerBot:
         self.log.info("<<"+str(ret))
         return ret
 
-    def parse_children(self,root):
+    def parse_children(self,root,skip_root=False):
         self.log.info("parsing: "+str(root))
         self.log.add()
 
         ret=[]
-        for child in root.children:
-            if child.dep_=='poss':
-                ret.append(child)
-                ret.extend(self.parse_children(child))
-                ret.append(root)
-            elif child.dep_=='case' or 'punct':
-                pass
-            else:
-                ret.extend(self.parse_children(child))
 
-        if len(ret)==0 and len(list(root.children))==0:
-            ret.append(root)
+        if root.lemma_=='be':
+            pass
+        else:
+            # todo dependencies left to consider:
+            # acl, advcl, advmod, appos, aux, cc, ccomp, clf, compound, conj, cop, csubj, dep, discourse
+            # dislocated, expl, fixed, flat, goeswith, iobj, list, mark, nmod, nsubj, nummod, obj, obl
+            # orphan, parataxis, reparandum, vocative, xcomp
+
+            # agent, attr, auxpass, complm, cop, csubjpass, dobj, hmod, hyph, infmod, intj, meta, neg
+            # nn, npadvmod, nsubjpass, num, number, oprd, partmod, pcmp, possesive, preconjj
+            # prt, quantmod, rcmod
+
+            ignore_deps=['case','punct','det'] # E.gs: 's, ?, the
+
+            # before root
+            for child in root.children:
+                if child.dep_ in ignore_deps:
+                    continue
+                elif child.dep_=='prep':
+                    ret.extend(self.parse_children(child,skip_root=True))
+                elif child.dep_=='poss':
+                    ret.extend(self.parse_children(child))
+
+            if not skip_root:
+                ret.append(root)
+
+            # after root
+            for child in root.children:
+                if child.dep_ in ignore_deps:
+                    continue
+                elif child.dep_=='pobj':
+                    ret.extend(self.parse_children(child))
+                elif child.dep_=='amod':
+                    ret.extend(self.parse_children(child))
 
         self.log.sub()
         self.log.info("<<"+str(ret))
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("Obama's age")
+    AnswerBot().parse_question("the biggest animal in the world")
