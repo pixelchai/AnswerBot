@@ -1,5 +1,9 @@
+from python_log_indenter import IndentedLoggerAdapter
+import logging
 import spacy
 nlp=spacy.load('en')
+log=IndentedLoggerAdapter(logging.getLogger(__name__))
+logging.basicConfig(level=logging.DEBUG,format='[%(asctime)s][%(levelname)s] %(message)s',datefmt='%H:%M')
 
 class AnswerBot:
     @staticmethod
@@ -16,7 +20,8 @@ class AnswerBot:
         :return: queries:[parts:[token]]
         """
         doc=nlp(self.fix_question(text))
-        print(doc.print_tree())
+        log.debug(str(doc.print_tree()))
+        log.info("parsing question: "+str(doc))
 
         ret=[]
         for sent in doc.sents:
@@ -39,4 +44,4 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    print(AnswerBot().parse_question("Obama's age"))
+    log.info(str(AnswerBot().parse_question("Obama's age")))
