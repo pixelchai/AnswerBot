@@ -28,6 +28,8 @@ class QuestionParsing(unittest.TestCase):
 
         self.assertParsed(bot,"what food is made by bees?",[["bees","food"]])
 
+        self.assertParsed(bot,"name the school that Harry Potter attended.",[["Harry","Potter","school"]])
+
 
 if __name__=='__main__':
     unittest.main(verbosity=2)

@@ -91,6 +91,8 @@ class AnswerBot:
                     ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
                 elif child.dep_=='relcl':
                     ret.extend(self.parse_children(child))
+                elif child.dep_=='compound':
+                    ret.extend(self.parse_children(child))
 
             if not skip_root:
                 if root.pos_!='VERB':
