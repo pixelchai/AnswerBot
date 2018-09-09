@@ -64,35 +64,46 @@ class AnswerBot:
         if root.lemma_=='be':
             pass
         else:
-            # todo dependencies left to consider:
-            # advcl, advmod, appos, aux, cc, ccomp, clf, compound, conj, cop, csubj, dep, discourse
-            # dislocated, expl, fixed, flat, goeswith, iobj, list, mark, nmod, nsubj, nummod, obj, obl
-            # orphan, parataxis, reparandum, vocative, xcomp
-
-            # agent, attr, complm, cop, csubjpass, dobj, hmod, hyph, infmod, intj, meta, neg
-            # nn, npadvmod, nsubjpass, num, number, oprd, partmod, pcmp, possesive, preconjj
-            # prt, quantmod, rcmod
-
-            ignore_deps=['case','punct','det','auxpass','advmod']
+            # children tokens to ignore
+            ignore_deps=[
+                'case',
+                'punct',
+                'det',
+                'auxpass',
+                'advmod'
+            ]
+            # children tokens to be prepended (to the ROOT)
+            pre_deps=[
+                'poss',
+                'acl',
+                'relcl',
+                'compound'
+            ]
+            # children tokens to be prepended but the children themselves omitted (grandchildren only)
+            pre_skip_deps=[
+                'prep',
+                'agent'
+            ]
+            post_deps = [
+                'pobj',
+                'amod',
+                'nsubjpass',
+                'nsubj'
+            ]
+            post_skip_deps = [
+            ]
 
             # before root
             for child in root.children:
                 if child.dep_ in ignore_deps:
                     continue
-                elif child.dep_=='prep':
+                elif child.dep_ in pre_skip_deps:
                     ret.extend(self.parse_children(child,skip_root=True))
-                elif child.dep_=='poss':
+                elif child.dep_ in pre_deps:
                     ret.extend(self.parse_children(child))
-                elif child.dep_=='acl':
-                    ret.extend(self.parse_children(child))
-                elif child.dep_=='agent':
-                    ret.extend(self.parse_children(child,skip_root=True))
+                # special case
                 elif child.dep_=='dobj':
                     ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
-                elif child.dep_=='relcl':
-                    ret.extend(self.parse_children(child))
-                elif child.dep_=='compound':
-                    ret.extend(self.parse_children(child))
 
             if not skip_root:
                 if root.pos_!='VERB':
@@ -102,13 +113,9 @@ class AnswerBot:
             for child in root.children:
                 if child.dep_ in ignore_deps:
                     continue
-                elif child.dep_=='pobj':
-                    ret.extend(self.parse_children(child))
-                elif child.dep_=='amod':
-                    ret.extend(self.parse_children(child))
-                elif child.dep_=='nsubjpass':
-                    ret.extend(self.parse_children(child))
-                elif child.dep_=='nsubj':
+                elif child.dep_ in post_skip_deps:
+                    ret.extend(self.parse_children(child,skip_root=True))
+                elif child.dep_ in post_deps:
                     ret.extend(self.parse_children(child))
 
         self.log.sub()
@@ -116,4 +123,4 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("Name the school that Harry Potter attended")
+    AnswerBot().parse_question("Which country is home to the kangaroo?")
