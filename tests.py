@@ -18,7 +18,16 @@ class QuestionParsing(unittest.TestCase):
         bot=AnswerBot(debug=False)
         self.assertParsed(bot,"Obama's age",[['Obama','age']])
         self.assertParsed(bot,"Obama's dad's age",[['Obama','dad','age']])
+
         self.assertParsed(bot,"the biggest animal",[['animal','biggest']])
+        self.assertParsed(bot,"the biggest animal in Europe",[['Europe','animal','biggest']])
+        self.assertParsed(bot,"the biggest animal of Europe",[['Europe','animal','biggest']])
+        self.assertParsed(bot,"the biggest animal from Europe",[['Europe','animal','biggest']])
+        self.assertParsed(bot,"the biggest animal ever seen in Europe",[['Europe','animal','biggest']])
+        self.assertParsed(bot,"Europe's biggest animal",[['Europe','animal','biggest']])
+
+        self.assertParsed(bot,"what food is made by bees?",[["bees","food"]])
+
 
 if __name__=='__main__':
     unittest.main(verbosity=2)

@@ -1,7 +1,7 @@
 from python_log_indenter import IndentedLoggerAdapter
 import logging
 import spacy
-nlp=spacy.load('en')
+nlp=spacy.load('en_core_web_sm')
 
 class AnswerBot:
     def __init__(self,debug=True):
@@ -65,15 +65,15 @@ class AnswerBot:
             pass
         else:
             # todo dependencies left to consider:
-            # acl, advcl, advmod, appos, aux, cc, ccomp, clf, compound, conj, cop, csubj, dep, discourse
+            # advcl, advmod, appos, aux, cc, ccomp, clf, compound, conj, cop, csubj, dep, discourse
             # dislocated, expl, fixed, flat, goeswith, iobj, list, mark, nmod, nsubj, nummod, obj, obl
             # orphan, parataxis, reparandum, vocative, xcomp
 
-            # agent, attr, auxpass, complm, cop, csubjpass, dobj, hmod, hyph, infmod, intj, meta, neg
+            # agent, attr, complm, cop, csubjpass, dobj, hmod, hyph, infmod, intj, meta, neg
             # nn, npadvmod, nsubjpass, num, number, oprd, partmod, pcmp, possesive, preconjj
             # prt, quantmod, rcmod
 
-            ignore_deps=['case','punct','det'] # E.gs: 's, ?, the
+            ignore_deps=['case','punct','det','auxpass','advmod']
 
             # before root
             for child in root.children:
@@ -83,9 +83,18 @@ class AnswerBot:
                     ret.extend(self.parse_children(child,skip_root=True))
                 elif child.dep_=='poss':
                     ret.extend(self.parse_children(child))
+                elif child.dep_=='acl':
+                    ret.extend(self.parse_children(child))
+                elif child.dep_=='agent':
+                    ret.extend(self.parse_children(child,skip_root=True))
+                elif child.dep_=='dobj':
+                    ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
+                elif child.dep_=='relcl':
+                    ret.extend(self.parse_children(child))
 
             if not skip_root:
-                ret.append(root)
+                if root.pos_!='VERB':
+                    ret.append(root)
 
             # after root
             for child in root.children:
@@ -95,10 +104,14 @@ class AnswerBot:
                     ret.extend(self.parse_children(child))
                 elif child.dep_=='amod':
                     ret.extend(self.parse_children(child))
+                elif child.dep_=='nsubjpass':
+                    ret.extend(self.parse_children(child))
+                elif child.dep_=='nsubj':
+                    ret.extend(self.parse_children(child))
 
         self.log.sub()
         self.log.info("<<"+str(ret))
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("the biggest animal in the world")
+    AnswerBot().parse_question("Name the school that Harry Potter attended")
