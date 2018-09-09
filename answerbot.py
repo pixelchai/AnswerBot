@@ -13,14 +13,30 @@ class AnswerBot:
     def parse_question(self,text):
         """
         breaks down a natural-language query into a hierarchical structure
-        :return: queries:[parts:[(word,type)]]
+        :return: queries:[parts:[token]]
         """
         doc=nlp(self.fix_question(text))
-        for sent in doc.sents:
-            print(sent)
+        print(doc.print_tree())
 
-        for entity in doc.ents:
-            print(entity)
+        ret=[]
+        for sent in doc.sents:
+            ret.extend(self.parse_sent(sent))
+        return ret
+
+    def parse_sent(self, sent):
+        #todo implement more query splitting here (e.g 'and')
+        return [self.parse_span(sent)]
+
+    def parse_span(self,span):
+        return self.parse_children(span.root)
+
+    def parse_children(self,root):
+        ret=[]
+        for child in root.children:
+            if child.dep_=='poss':
+                ret.append(root)
+                ret.extend(self.parse_children(child))
+        return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question('how old is Barrack Obama')
+    print(AnswerBot().parse_question("Obama's age"))
