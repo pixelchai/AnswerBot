@@ -61,74 +61,77 @@ class AnswerBot:
 
         ret=[]
 
-        if root.lemma_=='be':
-            if root.n_lefts>0 and root.n_rights>0:
-                # (...) is (...)?
-                for right in root.rights:
-                    ret.extend(self.parse_children(right))
-                # parse left after right
-                for left in root.lefts:
-                    ret.extend(self.parse_children(left))
-        else:
-            # children tokens to ignore
-            ignore_deps=[
-                'case',
-                'punct',
-                'det',
-                'auxpass',
-                # do not ignore advmod
-            ]
-            # children tokens to be prepended (to the ROOT)
-            pre_deps=[
-                'poss',
-                'acl',
-                'advcl',
-                'relcl',
-                'compound',
-            ]
-            # children tokens to be prepended but the children themselves omitted (grandchildren only)
-            pre_skip_deps=[
-                'prep',
-                'agent'
-            ]
-            post_deps = [
-                'pobj',
-                'amod',
-                'nsubjpass',
-                'nsubj'
-            ]
-            post_skip_deps = [
-            ]
+        # if root.lemma_=='be':
+        #     if root.n_lefts>0 and root.n_rights>0:
+        #         # (...) is (...)?
+        #         for right in root.rights:
+        #             ret.extend(self.parse_children(right))
+        #         # parse left after right
+        #         for left in root.lefts:
+        #             ret.extend(self.parse_children(left))
+        # else:
+        # children tokens to ignore
+        ignore_deps=[
+            'case',
+            'punct',
+            'det',
+            'auxpass',
+            # do not ignore advmod
+        ]
+        # children tokens to be prepended (to the ROOT)
+        pre_deps=[
+            'poss',
+            'acl',
+            'advcl',
+            'relcl',
+            'compound',
+            'attr',
+        ]
+        # children tokens to be prepended but the children themselves omitted (grandchildren only)
+        pre_skip_deps=[
+            'prep',
+            'agent'
+        ]
+        post_deps = [
+            'pobj',
+            'amod',
+            'nsubjpass',
+            'nsubj',
+            'pcomp',
+        ]
+        post_skip_deps = [
+            # 'prep',
+        ]
 
-            # before root
-            for child in root.children:
-                if child.dep_ in ignore_deps:
-                    continue
-                elif child.dep_ in pre_skip_deps:
-                    ret.extend(self.parse_children(child,skip_root=True))
-                elif child.dep_ in pre_deps:
-                    ret.extend(self.parse_children(child))
-                # special case
-                elif child.dep_=='dobj':
-                    ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
+        # before root
+        for child in root.children:
+            if child.dep_ in ignore_deps:
+                continue
+            elif child.dep_ in pre_skip_deps:
+                ret.extend(self.parse_children(child,skip_root=True))
+            elif child.dep_ in pre_deps:
+                ret.extend(self.parse_children(child))
+            # special case
+            elif child.dep_=='dobj':
+                ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
 
-            if not skip_root:
-                if root.pos_!='VERB':
-                    if not root.dep_ in ignore_deps:
-                        ret.append(root)
+        if not skip_root:
+            if root.pos_!='VERB':
+                if not root.dep_ in ignore_deps:
+                    ret.append(root)
 
-            # after root
-            for child in root.children:
-                if child.dep_ in ignore_deps:
-                    continue
-                elif child.dep_ in post_skip_deps:
-                    ret.extend(self.parse_children(child,skip_root=True))
-                elif child.dep_ in post_deps:
-                    ret.extend(self.parse_children(child))
+        # after root
+        for child in root.children:
+            if child.dep_ in ignore_deps:
+                continue
+            elif child.dep_ in post_skip_deps:
+                ret.extend(self.parse_children(child,skip_root=True))
+            elif child.dep_ in post_deps:
+                ret.extend(self.parse_children(child))
 
         self.log.sub()
         self.log.info("<<"+str(ret))
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("Which country sent an Armada to attack Britain in 1588")
+    AnswerBot().parse_question("What is the top colour in a rainbow")

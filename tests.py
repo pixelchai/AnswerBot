@@ -37,6 +37,11 @@ class QuestionParsing(unittest.TestCase):
 
         #fails:
         #What sweet food is made by bees using nectar from flowers
+        #Saint Patrick is the Patron Saint of which country
+        #From what tree do acorns come
+
+        #questionable:
+        #what is the top colour in a rainbow --> includes "what" - spacy error
 
 
 if __name__=='__main__':
