@@ -33,6 +33,8 @@ class QuestionParsing(unittest.TestCase):
         self.assertParsed(bot,"Which country is home to the Kangaroo",[["Kangaroo","home","country"]])
         self.assertParsed(bot,"kangaroo's home country",[["Kangaroo","home","country"]])
 
+        self.assertParsed(bot,"Which country sent an Armada to attack Britain in 1588",[["Armada","Britain","1588","country"]])
+
         #fails:
         #What sweet food is made by bees using nectar from flowers
 

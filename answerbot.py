@@ -82,8 +82,9 @@ class AnswerBot:
             pre_deps=[
                 'poss',
                 'acl',
+                'advcl',
                 'relcl',
-                'compound'
+                'compound',
             ]
             # children tokens to be prepended but the children themselves omitted (grandchildren only)
             pre_skip_deps=[
@@ -130,4 +131,4 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("How old is Obama")
+    AnswerBot().parse_question("Which country sent an Armada to attack Britain in 1588")
