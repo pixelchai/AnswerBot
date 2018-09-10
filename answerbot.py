@@ -91,6 +91,7 @@ class AnswerBot:
         pre_skip_deps=[
             'prep',
             'agent'
+            # 'advmod',
         ]
         post_deps = [
             'pobj',
@@ -98,6 +99,9 @@ class AnswerBot:
             'nsubjpass',
             'nsubj',
             'pcomp',
+            'acomp',
+            'oprd',
+            'appos',
         ]
         post_skip_deps = [
             # 'prep',
@@ -116,7 +120,7 @@ class AnswerBot:
                 ret.extend(self.parse_children(child,skip_root=child.tag_=='WDT'))
 
         if not skip_root:
-            if root.pos_!='VERB':
+            if root.pos_!='VERB' and root.pos_!='ADP':
                 if not root.dep_ in ignore_deps:
                     ret.append(root)
 
@@ -134,4 +138,5 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("What is the top colour in a rainbow")
+    AnswerBot().parse_question("What is the name of the bear in The Jungle Book?")
+    #todo add unittest
