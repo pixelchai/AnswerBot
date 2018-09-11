@@ -61,58 +61,47 @@ class AnswerBot:
 
         ret=[]
 
-        # if root.lemma_=='be':
-        #     if root.n_lefts>0 and root.n_rights>0:
-        #         # (...) is (...)?
-        #         for right in root.rights:
-        #             ret.extend(self.parse_children(right))
-        #         # parse left after right
-        #         for left in root.lefts:
-        #             ret.extend(self.parse_children(left))
-        # else:
-
         # which tokens to append,prepend and ignore config array
         deps=[
-            # children tokens to ignore
-            [
-              'case',
-              'punct',
-              'det',
-              'auxpass',
-              # do not ignore advmod
-            ],
-            # children tokens to be prepended (to the ROOT)
-            [
-               'poss',
-               'acl',
-               'advcl',
-               'relcl',
-               'compound',
-               'attr',
-            ],
-            # children tokens to be prepended but the children themselves omitted (grandchildren only)
-            [
-                'prep',
-                'agent'
-                # 'advmod',
-            ],
-            # appended
-            [
-                'pobj',
-                'amod',
-                'nsubjpass',
-                'nsubj',
-                'pcomp',
-                'acomp',
-                'oprd',
-                'appos',
-            ],
-            #appending skip
-            [
-                # 'prep',
-            ],
+                # children tokens to ignore
+                [
+                  'case',
+                  'punct',
+                  'det',
+                  'auxpass',
+                  # do not ignore advmod
+                ],
+                # children tokens to be prepended (to the ROOT)
+                [
+                   'poss',
+                   'acl',
+                   'advcl',
+                   'relcl',
+                   'compound',
+                   'attr',
+                ],
+                # children tokens to be prepended but the children themselves omitted (grandchildren only)
+                [
+                    'prep',
+                    'agent'
+                    # 'advmod',
+                ],
+                # appended
+                [
+                    'pobj',
+                    'amod',
+                    'nsubjpass',
+                    'nsubj',
+                    'pcomp',
+                    'acomp',
+                    'oprd',
+                    'appos',
+                ],
+                #appending skip
+                [
+                    # 'prep',
+                ],
             ]
-
 
         # before root
         for child in root.children:
