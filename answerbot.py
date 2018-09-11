@@ -70,50 +70,57 @@ class AnswerBot:
         #         for left in root.lefts:
         #             ret.extend(self.parse_children(left))
         # else:
-        # children tokens to ignore
-        ignore_deps=[
-            'case',
-            'punct',
-            'det',
-            'auxpass',
-            # do not ignore advmod
-        ]
-        # children tokens to be prepended (to the ROOT)
-        pre_deps=[
-            'poss',
-            'acl',
-            'advcl',
-            'relcl',
-            'compound',
-            'attr',
-        ]
-        # children tokens to be prepended but the children themselves omitted (grandchildren only)
-        pre_skip_deps=[
-            'prep',
-            'agent'
-            # 'advmod',
-        ]
-        post_deps = [
-            'pobj',
-            'amod',
-            'nsubjpass',
-            'nsubj',
-            'pcomp',
-            'acomp',
-            'oprd',
-            'appos',
-        ]
-        post_skip_deps = [
-            # 'prep',
-        ]
+
+        # which tokens to append,prepend and ignore config array
+        deps=[
+            # children tokens to ignore
+            [
+              'case',
+              'punct',
+              'det',
+              'auxpass',
+              # do not ignore advmod
+            ],
+            # children tokens to be prepended (to the ROOT)
+            [
+               'poss',
+               'acl',
+               'advcl',
+               'relcl',
+               'compound',
+               'attr',
+            ],
+            # children tokens to be prepended but the children themselves omitted (grandchildren only)
+            [
+                'prep',
+                'agent'
+                # 'advmod',
+            ],
+            # appended
+            [
+                'pobj',
+                'amod',
+                'nsubjpass',
+                'nsubj',
+                'pcomp',
+                'acomp',
+                'oprd',
+                'appos',
+            ],
+            #appending skip
+            [
+                # 'prep',
+            ],
+            ]
+
 
         # before root
         for child in root.children:
-            if child.dep_ in ignore_deps:
+            if child.dep_ in deps[0]:
                 continue
-            elif child.dep_ in pre_skip_deps:
+            elif child.dep_ in deps[2]:
                 ret.extend(self.parse_children(child,skip_root=True))
-            elif child.dep_ in pre_deps:
+            elif child.dep_ in deps[1]:
                 ret.extend(self.parse_children(child))
             # special case
             elif child.dep_=='dobj':
@@ -121,16 +128,16 @@ class AnswerBot:
 
         if not skip_root:
             if root.pos_!='VERB' and root.pos_!='ADP':
-                if not root.dep_ in ignore_deps:
+                if not root.dep_ in deps[0]:
                     ret.append(root)
 
         # after root
         for child in root.children:
-            if child.dep_ in ignore_deps:
+            if child.dep_ in deps[0]:
                 continue
-            elif child.dep_ in post_skip_deps:
+            elif child.dep_ in deps[4]:
                 ret.extend(self.parse_children(child,skip_root=True))
-            elif child.dep_ in post_deps:
+            elif child.dep_ in deps[3]:
                 ret.extend(self.parse_children(child))
 
         self.log.sub()
@@ -138,5 +145,5 @@ class AnswerBot:
         return ret
 
 if __name__=='__main__':
-    AnswerBot().parse_question("What is the name of the bear in The Jungle Book?")
-    #todo add unittest
+    AnswerBot().parse_question("What is the name of America's first president?")
+    #Where was Obama born?
