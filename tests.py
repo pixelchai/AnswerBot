@@ -16,6 +16,7 @@ class QuestionParsing(unittest.TestCase):
 
     def test_a_basic(self):
         bot=AnswerBot(debug=False)
+        # both versions
         self.assertParsed(bot,"Obama's age",[['Obama','age']])
         self.assertParsed(bot,"Obama's dad's age",[['Obama','dad','age']])
 
@@ -30,19 +31,21 @@ class QuestionParsing(unittest.TestCase):
 
         self.assertParsed(bot,"name the school that Harry Potter attended.",[["Harry","Potter","school"]])
 
-        self.assertParsed(bot,"Which country is home to the Kangaroo",[["Kangaroo","home","country"]])
+        # old cases
+        self.assertParsed(bot,"Which country is home to the Kangaroo",[["country","Kangaroo","home"]])
         self.assertParsed(bot,"kangaroo's home country",[["Kangaroo","home","country"]])
 
-        self.assertParsed(bot,"Which country sent an Armada to attack Britain in 1588",[["Armada","Britain","1588","country"]])
-        self.assertParsed(bot,"In the nursery rhyme, who sat on a wall before having a great fall?",[["nursery","wall","fall","great","who","rhyme"]])
+        self.assertParsed(bot,"Which country sent an Armada to attack Britain in 1588",[["country","Armada","Britain","1588"]])
+        self.assertParsed(bot,"In the nursery rhyme, who sat on a wall before having a great fall?",[["nursery","who","wall","fall","great","rhyme"]])
 
         self.assertParsed(bot,"From what tree do acorns come?",[["tree","acorns"]])
 
-        self.assertParsed(bot,"Which river flows through London?",[["London","river"]])
+        self.assertParsed(bot,"Which river flows through London?",[["river","London"]])
 
         #slightly questionable:
-        self.assertParsed(bot,"How many colours are in a rainbow?",[["rainbow","colours","many"]])
+        self.assertParsed(bot,"How many colours are in a rainbow?",[["colours","many","rainbow"]])
         self.assertParsed(bot,"What is the name of the bear in The Jungle Book?",[["What","bear","Jungle","Book","name"]])
+        self.assertParsed(bot,"who was the Berlin Wall built by?",[["Who","Berlin","Wall"]])
 
 
         #fails:

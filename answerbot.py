@@ -1,3 +1,5 @@
+import itertools
+
 from python_log_indenter import IndentedLoggerAdapter
 import logging
 import spacy
@@ -43,7 +45,6 @@ class AnswerBot:
         return ret
 
     def parse_sent(self, sent):
-        #todo implement more query splitting here (e.g 'and')
         self.log.info("parsing sent: "+str(sent))
         return [self.parse_span(sent)]
 
@@ -61,7 +62,7 @@ class AnswerBot:
 
         ret=[]
 
-        # which tokens to append,prepend and ignore config array
+        # which tokens to append,prepend and ignore
         deps=[
                 # children tokens to ignore
                 [
@@ -73,7 +74,8 @@ class AnswerBot:
                 ],
                 # children tokens to be prepended (to the ROOT)
                 [
-                   'poss',
+                    'nsubj',
+                    'poss',
                    'acl',
                    'advcl',
                    'relcl',
@@ -91,7 +93,6 @@ class AnswerBot:
                     'pobj',
                     'amod',
                     'nsubjpass',
-                    'nsubj',
                     'pcomp',
                     'acomp',
                     'oprd',
@@ -133,6 +134,50 @@ class AnswerBot:
         self.log.info("<<"+str(ret))
         return ret
 
+    @staticmethod
+    def get_query_combs(query):
+        """
+        :return: list of combinations of splitting up the query
+        """
+        # want to get every combination of how to split up the entries in a list
+        # way of representing the commas: 0=no comma, 1=comma
+        # We want the binary combinations of length `(amount of entries)-1`
+        # which indicate to whether to have a 'comma' at each point between the entries
+        # ---
+        # Example: consider the lists A and B
+        # 0  1  2  3 <-- A: entries
+        #  0  1   2  <-- B: can be thought of as positions for commas.
+        # to get every combination of how to split up the entries in A
+        # (like [0123],[012,3],[01,23],[01,2,3] etc)
+        # you must get every arrangement of B (the commas in-between the entries)
+        # let's say 0 = no comma, 1 = comma
+        # the possible arrangements of B will be
+        # 001,010,011,101,110,111
+        # this is the binary pattern
+
+        ret=[]
+        for split_config in itertools.product([0,1],repeat=len(query)-1):
+            obuf=[]
+            buf=[]
+            for i in range(len(split_config)):
+                buf.append(query[i])
+                if split_config[i]: # if there is a 'comma' after the entry
+                    #flush buf to obuf
+                    obuf.append(buf)
+                    buf=[]
+            buf.append(query[-1]) # last item will never 'have a comma' after it
+            obuf.append(buf) # flush buf to obuf
+            ret.append(obuf) # flush obuf to ret
+        return ret
+
+    def select_pages(self, queries):
+        """
+        :return: relevant URLs for pages (verified to exist), given queries
+        """
+        pass
+
 if __name__=='__main__':
-    AnswerBot().parse_question("What is the name of America's first president?")
-    #Where was Obama born?
+    # print(AnswerBot.get_query_combs('abcd'))
+    AnswerBot().parse_question("Who is Obama's Dad")
+    # todo list:
+    # Where was Obama born?
