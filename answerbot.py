@@ -1,4 +1,6 @@
 import itertools
+import pprint
+from collections import OrderedDict
 
 from python_log_indenter import IndentedLoggerAdapter
 import logging
@@ -30,7 +32,7 @@ class AnswerBot:
     def parse_question(self,text):
         """
         breaks down a natural-language query into a hierarchical structure
-        :return: queries:[parts:[token]]
+        :return: question:[queries:[terms]]
         """
         doc=nlp(self.fix_question(text))
         self.log.debug(str(doc.print_tree()))
@@ -135,25 +137,10 @@ class AnswerBot:
         return ret
 
     @staticmethod
-    def get_query_combs(query):
+    def split_combs(query):
         """
         :return: list of combinations of splitting up the query
         """
-        # want to get every combination of how to split up the entries in a list
-        # way of representing the commas: 0=no comma, 1=comma
-        # We want the binary combinations of length `(amount of entries)-1`
-        # which indicate to whether to have a 'comma' at each point between the entries
-        # ---
-        # Example: consider the lists A and B
-        # 0  1  2  3 <-- A: entries
-        #  0  1   2  <-- B: can be thought of as positions for commas.
-        # to get every combination of how to split up the entries in A
-        # (like [0123],[012,3],[01,23],[01,2,3] etc)
-        # you must get every arrangement of B (the commas in-between the entries)
-        # let's say 0 = no comma, 1 = comma
-        # the possible arrangements of B will be
-        # 001,010,011,101,110,111
-        # this is the binary pattern
 
         ret=[]
         for split_config in itertools.product([0,1],repeat=len(query)-1):
@@ -170,14 +157,45 @@ class AnswerBot:
             ret.append(obuf) # flush obuf to ret
         return ret
 
-    def select_pages(self, queries):
+    @staticmethod
+    def query_combs(query):
         """
-        :return: relevant URLs for pages (verified to exist), given queries
+        get list of useful combinations/groupings of the parsed terms, for searching
         """
+        # example input: ['Europe','animal','biggest']
+        # output:
+        # [[['Europe']],
+        #  [['Europe'], ['animal']],
+        #  [['Europe'], ['animal'], ['biggest']],
+        #  [['Europe'], ['animal', 'biggest']],
+        #  [['Europe', 'animal']],
+        #  [['Europe', 'animal'], ['biggest']],
+        #  [['Europe', 'animal', 'biggest']]]
+
+        ret=[]
+        for com in AnswerBot.split_combs(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
+            for i in range(1,len(com)+1): # get every truncation: e.g: a, ab, abc
+                ret.append(com[:i])
+
+        # remove duplicates from ret
+        ret.sort()
+        return list(k for k,_ in itertools.groupby(ret))
+
+    def select_pages(self, question):
+        """
+        :return: relevant URLs for pages (that exist), given the question
+        """
+        # for query in queries:
+        #     for com in self.split_combs(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
+        #         for i in range(1,len(com)+1): # get every truncation of the list. e.g: a, ab, abc
+        #             l=
         pass
 
+
 if __name__=='__main__':
-    # print(AnswerBot.get_query_combs('abcd'))
-    AnswerBot().parse_question("Who is Obama's Dad")
+    pprint.pprint(AnswerBot.query_combs(['Europe','animal','biggest']))
+    # pprint.pprint(list(AnswerBot.question_combs([['Europe','animal','biggest'],['Europe','animal','smallest']])))
+    # print(list(AnswerBot.query_combs([['Europe','animal','biggest']])))
+    # AnswerBot().parse_question("Who is Obama's Dad")
     # todo list:
     # Where was Obama born?
