@@ -32,7 +32,7 @@ class AnswerBot:
     def parse_question(self,text):
         """
         breaks down a natural-language query into a hierarchical structure
-        :return: question:[queries:[terms]]
+        :return: list of questions (list of queries (list of terms))
         """
         doc=nlp(self.fix_question(text))
         self.log.debug(str(doc.print_tree()))
@@ -137,9 +137,9 @@ class AnswerBot:
         return ret
 
     @staticmethod
-    def split_combs(query):
+    def groupings(query):
         """
-        :return: list of combinations of splitting up the query
+        :return: list of every way of splitting up the query into groups
         """
 
         ret=[]
@@ -173,13 +173,36 @@ class AnswerBot:
         #  [['Europe', 'animal', 'biggest']]]
 
         ret=[]
-        for com in AnswerBot.split_combs(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
+        for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
             for i in range(1,len(com)+1): # get every truncation: e.g: a, ab, abc
                 ret.append(com[:i])
 
         # remove duplicates from ret
         ret.sort()
         return list(k for k,_ in itertools.groupby(ret))
+
+    @staticmethod
+    def query_combs(query):
+        """
+        generator for useful permutations of groupings of the parsed terms - for searching
+        """
+        for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
+            # get all (all possible lengths) permutations (possible orders) of the terms in grouping
+            for i in range(1,len(com)+1):
+                yield '--------------------------------------------'
+                for permutation in itertools.permutations(com,i):
+                    yield permutation
+
+
+    # @staticmethod
+    # def combinations(items):
+    #     """
+    #     get all combinations of a list
+    #     """
+    #     return (set(itertools.compress(items, mask)) for mask in itertools.product(*[[0, 1]] * len(items)))
+    #
+    # def split_combs(self):
+    #     pass # todo
 
     def select_pages(self, question):
         """
@@ -193,7 +216,7 @@ class AnswerBot:
 
 
 if __name__=='__main__':
-    pprint.pprint(AnswerBot.query_combs(['Europe','animal','biggest']))
+    pprint.pprint(list(AnswerBot.query_combs(["Who", "Berlin", "Wall"])))
     # pprint.pprint(list(AnswerBot.question_combs([['Europe','animal','biggest'],['Europe','animal','smallest']])))
     # print(list(AnswerBot.query_combs([['Europe','animal','biggest']])))
     # AnswerBot().parse_question("Who is Obama's Dad")
