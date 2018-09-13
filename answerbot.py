@@ -187,22 +187,8 @@ class AnswerBot:
         generator for useful permutations of groupings of the parsed terms - for searching
         """
         for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
-            # get all (all possible lengths) permutations (possible orders) of the terms in grouping
-            for i in range(1,len(com)+1):
-                yield '--------------------------------------------'
-                for permutation in itertools.permutations(com,i):
-                    yield permutation
-
-
-    # @staticmethod
-    # def combinations(items):
-    #     """
-    #     get all combinations of a list
-    #     """
-    #     return (set(itertools.compress(items, mask)) for mask in itertools.product(*[[0, 1]] * len(items)))
-    #
-    # def split_combs(self):
-    #     pass # todo
+            for permutation in itertools.permutations(com): # get permutations (possible orders) of the terms in grouping
+                yield permutation
 
     def select_pages(self, question):
         """
