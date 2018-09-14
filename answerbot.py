@@ -175,10 +175,6 @@ class AnswerBot:
         """
         :return: relevant URLs for pages (that exist), given the question
         """
-        # for query in queries:
-        #     for com in self.split_combs(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
-        #         for i in range(1,len(com)+1): # get every truncation of the list. e.g: a, ab, abc
-        #             l=
         pass
 
 
