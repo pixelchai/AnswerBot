@@ -18,8 +18,8 @@ class AnswerBot:
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-        self.log=IndentedLoggerAdapter(logger)
-        self.log.setLevel(logging.DEBUG if debug else logging.WARNING)
+        # self.log=IndentedLoggerAdapter(logger)
+        # self.log.setLevel(logging.DEBUG if debug else logging.WARNING)
         # endregion
 
     # region question parsing
@@ -37,32 +37,32 @@ class AnswerBot:
         :return: list of questions (list of queries (list of terms))
         """
         doc=nlp(self.fix_question(text))
-        self.log.debug(str(doc.print_tree()))
-        self.log.info("parsing question: "+str(doc))
-        self.log.add()
+        # self.log.debug(str(doc.print_tree()))
+        # self.log.debug("parsing question: "+str(doc))
+        # self.log.add()
 
         ret=[]
         for sent in doc.sents:
             ret.extend(self.parse_sent(sent))
-        self.log.sub()
-        self.log.info(str(ret))
+        # self.log.sub()
+        # self.log.debug(str(ret))
         return ret
 
     def parse_sent(self, sent):
-        self.log.info("parsing sent: "+str(sent))
+        # self.log.debug("parsing sent: "+str(sent))
         return [self.parse_span(sent)]
 
     def parse_span(self,span):
-        self.log.info("parsing span: "+str(span))
-        self.log.add()
-        ret = self.parse_children(span.root)
-        self.log.sub()
-        self.log.info("<<"+str(ret))
-        return ret
+        # self.log.debug("parsing span: "+str(span))
+        # self.log.add()
+        # ret = self.parse_children(span.root)
+        # self.log.sub()
+        # self.log.debug("<<"+str(ret))
+        return self.parse_children(span.root)
 
     def parse_children(self,root,skip_root=False):
-        self.log.info("parsing: "+str(root))
-        self.log.add()
+        # self.log.debug("parsing: "+str(root))
+        # self.log.add()
 
         ret=[]
 
@@ -70,21 +70,21 @@ class AnswerBot:
         deps=[
                 # children tokens to ignore
                 [
-                  'case',
-                  'punct',
-                  'det',
-                  'auxpass',
-                  # do not ignore advmod
+                    'case',
+                    'punct',
+                    'det',
+                    'auxpass',
+                    # do not ignore advmod
                 ],
                 # children tokens to be prepended (to the ROOT)
                 [
                     'nsubj',
                     'poss',
-                   'acl',
-                   'advcl',
-                   'relcl',
-                   'compound',
-                   'attr',
+                    'acl',
+                    'advcl',
+                    'relcl',
+                    'compound',
+                    'attr',
                 ],
                 # children tokens to be prepended but the children themselves omitted (grandchildren only)
                 [
@@ -134,17 +134,17 @@ class AnswerBot:
             elif child.dep_ in deps[3]:
                 ret.extend(self.parse_children(child))
 
-        self.log.sub()
-        self.log.info("<<"+str(ret))
+        # self.log.sub()
+        # self.log.debug("<<"+str(ret))
         return ret
-
     # endregion
 
     # region keyword grouping + ordering
     @staticmethod
     def groupings(query):
         """
-        :return: generator for every way of splitting up the query into groups
+        every way of splitting up the query into groups
+        :return: generator
         """
         # see documentation for more info
 
@@ -164,22 +164,29 @@ class AnswerBot:
     @staticmethod
     def query_perms(query):
         """
-        generator for useful permutations of groupings of the parsed terms - for searching
+        useful permutations of groupings of the parsed terms - for searching
+        :return: generator
         """
         for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
             for permutation in itertools.permutations(com): # get permutations (possible orders) of the terms in grouping
                 yield permutation
     #endregion
 
-    def select_pages(self, question):
+    def search(self, question):
         """
-        :return: relevant URLs for pages (that exist), given the question
+        relevant URLs for pages (that exist), given the question
+        :return: [(confidence, data, source),...]
         """
-        pass
+
+        for query in self.parse_question(question):
+            for group in AnswerBot.query_perms(query):
+                print(str(group))
 
 
 if __name__=='__main__':
-    pprint.pprint(list(AnswerBot.query_perms(["Europe", "animal", "biggest"])))
+    a=AnswerBot()
+    print(a.search("the biggest animal of Europe"))
+    # pprint.pprint(list(AnswerBot.query_perms(["Europe", "animal", "biggest"])))
     # pprint.pprint(list(AnswerBot.question_combs([['Europe','animal','biggest'],['Europe','animal','smallest']])))
     # print(list(AnswerBot.query_combs([['Europe','animal','biggest']])))
     # AnswerBot().parse_question("Who is Obama's Dad")
