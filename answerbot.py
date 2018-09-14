@@ -1,4 +1,5 @@
 import itertools
+import wikipedia
 import pprint
 import spacy
 nlp=spacy.load('en_core_web_sm')
@@ -144,8 +145,16 @@ def search(question):
         for group in query_perms(query):
             print(str(group))
 
+def search_wiki(keywords):
+    """
+    try find pages relating to the group
+    :param keywords: aka a 'group'
+    :return: [(confidence, url),...]
+    """
+    search_string=' '.join(word for word in keywords)
+    return wikipedia.search(search_string)
+
 
 if __name__=='__main__':
-    print(search("the biggest animal of Europe"))
-    # todo list:
-    # Where was Obama born?
+    # print(search("the biggest animal of Europe"))
+    print(search_wiki("the biggest animal of Europe"))
