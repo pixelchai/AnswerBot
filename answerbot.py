@@ -9,7 +9,7 @@ nlp=spacy.load('en_core_web_sm')
 
 class AnswerBot:
     def __init__(self,debug=True):
-        #logging setup
+        # region logging setup
         logger=logging.getLogger(__name__)
 
         formatter=logging.Formatter('[%(asctime)s][%(levelname)s] %(message)s', datefmt='%H:%M')
@@ -20,7 +20,9 @@ class AnswerBot:
 
         self.log=IndentedLoggerAdapter(logger)
         self.log.setLevel(logging.DEBUG if debug else logging.WARNING)
+        # endregion
 
+    # region question parsing
     @staticmethod
     def fix_question(text:str):
         if text.endswith('.'):
@@ -136,14 +138,17 @@ class AnswerBot:
         self.log.info("<<"+str(ret))
         return ret
 
+    # endregion
+
+    # region keyword grouping + ordering
     @staticmethod
     def groupings(query):
         """
-        :return: list of every way of splitting up the query into groups
+        :return: generator for every way of splitting up the query into groups
         """
+        # see documentation for more info
 
-        ret=[]
-        for split_config in itertools.product([0,1],repeat=len(query)-1):
+        for split_config in itertools.product([0,1],repeat=len(query)-1): # get binary pattern
             obuf=[]
             buf=[]
             for i in range(len(split_config)):
@@ -154,41 +159,17 @@ class AnswerBot:
                     buf=[]
             buf.append(query[-1]) # last item will never 'have a comma' after it
             obuf.append(buf) # flush buf to obuf
-            ret.append(obuf) # flush obuf to ret
-        return ret
+            yield obuf # flush obuf to ret
 
     @staticmethod
-    def query_combs(query):
-        """
-        get list of useful combinations/groupings of the parsed terms, for searching
-        """
-        # example input: ['Europe','animal','biggest']
-        # output:
-        # [[['Europe']],
-        #  [['Europe'], ['animal']],
-        #  [['Europe'], ['animal'], ['biggest']],
-        #  [['Europe'], ['animal', 'biggest']],
-        #  [['Europe', 'animal']],
-        #  [['Europe', 'animal'], ['biggest']],
-        #  [['Europe', 'animal', 'biggest']]]
-
-        ret=[]
-        for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
-            for i in range(1,len(com)+1): # get every truncation: e.g: a, ab, abc
-                ret.append(com[:i])
-
-        # remove duplicates from ret
-        ret.sort()
-        return list(k for k,_ in itertools.groupby(ret))
-
-    @staticmethod
-    def query_combs(query):
+    def query_perms(query):
         """
         generator for useful permutations of groupings of the parsed terms - for searching
         """
         for com in AnswerBot.groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
             for permutation in itertools.permutations(com): # get permutations (possible orders) of the terms in grouping
                 yield permutation
+    #endregion
 
     def select_pages(self, question):
         """
@@ -202,7 +183,7 @@ class AnswerBot:
 
 
 if __name__=='__main__':
-    pprint.pprint(list(AnswerBot.query_combs(["Who", "Berlin", "Wall"])))
+    pprint.pprint(list(AnswerBot.query_perms(["Europe", "animal", "biggest"])))
     # pprint.pprint(list(AnswerBot.question_combs([['Europe','animal','biggest'],['Europe','animal','smallest']])))
     # print(list(AnswerBot.query_combs([['Europe','animal','biggest']])))
     # AnswerBot().parse_question("Who is Obama's Dad")
