@@ -8,19 +8,6 @@ import spacy
 nlp=spacy.load('en_core_web_sm')
 
 class AnswerBot:
-    def __init__(self,debug=True):
-        # region logging setup
-        logger=logging.getLogger(__name__)
-
-        formatter=logging.Formatter('[%(asctime)s][%(levelname)s] %(message)s', datefmt='%H:%M')
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-
-        # self.log=IndentedLoggerAdapter(logger)
-        # self.log.setLevel(logging.DEBUG if debug else logging.WARNING)
-        # endregion
 
     # region question parsing
     @staticmethod
@@ -37,33 +24,19 @@ class AnswerBot:
         :return: list of questions (list of queries (list of terms))
         """
         doc=nlp(self.fix_question(text))
-        # self.log.debug(str(doc.print_tree()))
-        # self.log.debug("parsing question: "+str(doc))
-        # self.log.add()
 
         ret=[]
         for sent in doc.sents:
             ret.extend(self.parse_sent(sent))
-        # self.log.sub()
-        # self.log.debug(str(ret))
         return ret
 
     def parse_sent(self, sent):
-        # self.log.debug("parsing sent: "+str(sent))
         return [self.parse_span(sent)]
 
     def parse_span(self,span):
-        # self.log.debug("parsing span: "+str(span))
-        # self.log.add()
-        # ret = self.parse_children(span.root)
-        # self.log.sub()
-        # self.log.debug("<<"+str(ret))
         return self.parse_children(span.root)
 
     def parse_children(self,root,skip_root=False):
-        # self.log.debug("parsing: "+str(root))
-        # self.log.add()
-
         ret=[]
 
         # which tokens to append,prepend and ignore
@@ -134,8 +107,6 @@ class AnswerBot:
             elif child.dep_ in deps[3]:
                 ret.extend(self.parse_children(child))
 
-        # self.log.sub()
-        # self.log.debug("<<"+str(ret))
         return ret
     # endregion
 
@@ -186,9 +157,5 @@ class AnswerBot:
 if __name__=='__main__':
     a=AnswerBot()
     print(a.search("the biggest animal of Europe"))
-    # pprint.pprint(list(AnswerBot.query_perms(["Europe", "animal", "biggest"])))
-    # pprint.pprint(list(AnswerBot.question_combs([['Europe','animal','biggest'],['Europe','animal','smallest']])))
-    # print(list(AnswerBot.query_combs([['Europe','animal','biggest']])))
-    # AnswerBot().parse_question("Who is Obama's Dad")
     # todo list:
     # Where was Obama born?
