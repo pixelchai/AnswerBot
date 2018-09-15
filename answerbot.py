@@ -2,12 +2,11 @@ import builtins as __builtin__
 
 import itertools
 import sys
-from typing import List
 
 import wikipedia
 import pprint
-import spacy
-nlp=spacy.load('en_core_web_sm')
+from spacy import load
+nlp= load('en_core_web_sm')
 
 VERBOSITY=3
 INDENT=0
@@ -172,7 +171,7 @@ def groupings(query):
                 buf=[]
         buf.append(query[-1]) # last item will never 'have a comma' after it
         obuf.append(buf) # flush buf to obuf
-        yield obuf # flush obuf to ret
+        yield obuf
 
 def query_variations(query):
     """
