@@ -195,7 +195,7 @@ def search_pages(variations, thresh=0.2):
     find candidate pages to be analysed
     :return: sorted: [(confidence, id),...]
     """
-    search_strings=set(' '.join(str(word) for word in variation[0]) for variation in variations) # remove duplicates (minimise networking)
+    search_strings=set(' '.join(str(word) for word in variation[0]) for variation in variations) # set = remove duplicates (minimise networking)
 
     print('Searching for candidates:',level=1)
     indent(level=1)
@@ -215,7 +215,7 @@ def search_pages(variations, thresh=0.2):
 
     def deduplicate():
         seen=set()
-        for candidate in ret:
+        for candidate in ret: # shadowing ok
             if not candidate[1] in seen:
                 seen.add(candidate[1])
                 yield candidate
@@ -246,23 +246,23 @@ def search(question):
 
             wikipedia_pages.append((candidate[0],wikipedia.page(candidate[1])))
 
+        wikipedia_pages.sort(key=lambda x:x[0], reverse=True) # sort wikipedia pages by confidence
+
         for variation in variations:
             # print(variation)
             # todo rank pages
             # todo extract data from pages
             pass
 
-
         unindent(level=1)
 
-def calc_relevancy(query, wikipedia_page: wikipedia.WikipediaPage):
+def calc_relevancy(query, content_doc):
     """
     calculate the relevancy of the page to the query
     :return: relevancy
     """
-    content_doc=nlp(wikipedia_page.content)
     print(query)
-    return 0
+    return 0 #todo
 
 def search_wiki(search_string,limit=1):
     """
@@ -271,11 +271,8 @@ def search_wiki(search_string,limit=1):
     """
     doc1=nlp(search_string)
     for title in wikipedia.search(search_string,results=limit):
-        # print('.', level=1, end='', indent=0)
-        # sys.stdout.flush()
         yield (doc1.similarity(nlp(title)),title)
 
 
 if __name__=='__main__':
     pprint.pprint(search('the biggest animal of Europe'))
-    # print(search_wiki("the biggest animal of Europe"))
