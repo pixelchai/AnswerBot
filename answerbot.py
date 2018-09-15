@@ -150,17 +150,18 @@ def query_perms(query):
 #         for group in query_perms(query):
 #             print(str(group))
 
-def search_pages(perms):
+def search_pages(perms,thresh=0.2):
     """
     find candidate pages to be analysed
-    :return: {key:[(confidence, id),...]}
+    :return: sorted: [(confidence, id),...]
     """
-    ret={}
-    for perm in perms:
-        # nb rest will be perm[0:]
-        key=' '.join(str(word) for word in perm[0])
-        if key not in ret: # try minimise the amount of API calls (minimise networking)
-            ret[key]=(search_wiki(key))
+    search_strings=set(' '.join(str(word) for word in perm[0]) for perm in perms) # remove duplicates (minimise networking)
+    ret=[]
+    for search_string in search_strings:
+        for candidate in search_wiki(search_string):
+            if candidate[0]>=thresh: # confidence >= threshold
+                ret.append(candidate)
+    ret.sort(key=lambda x:x[0],reverse=True)
     return ret
 
 def search_wiki(search_string):
