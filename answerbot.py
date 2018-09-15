@@ -1,11 +1,56 @@
+import builtins as __builtin__
+
 import itertools
+import sys
 from typing import List
 
 import wikipedia
 import pprint
 import spacy
 nlp=spacy.load('en_core_web_sm')
+
 VERBOSITY=3
+INDENT=0
+
+# region logging
+# noinspection PyShadowingBuiltins
+def grouping_str(grouping):
+    ret=''
+    for i in range(len(grouping)):
+        ret+=' '.join([str(x) for x in grouping[i]])
+        if i<len(grouping)-1:
+            ret+='>'
+    return ret
+
+def print(*args,**kwargs):
+    # custom kwargs
+    # NB: deleting them after so they don't get passed to internal print function
+    if 'level' in kwargs:
+        if VERBOSITY < kwargs['level']:
+            return
+        del kwargs['level']
+    indt=INDENT
+    if 'indent' in kwargs:
+        indt=kwargs['indent']
+        del kwargs['indent']
+    if indt>0:
+        __builtin__.print('\t'*indt,end='')
+    return __builtin__.print(*args,**kwargs)
+
+def indent(n=1,level=None):
+    global INDENT
+    if level is not None:
+        if VERBOSITY<level:
+            return
+    INDENT+=n
+
+def unindent(n=1,level=None):
+    global INDENT
+    if level is not None:
+        if VERBOSITY<level:
+            return
+    INDENT-=n
+# endregion
 
 # region question parsing
 def fix_question(text:str):
@@ -25,7 +70,7 @@ def parse_question(text):
     ret=[]
     for sent in doc.sents:
         ret.extend(parse_sent(sent))
-    if VERBOSITY>=1: print('Parsed: '+str(ret))
+    print('Parsed: '+str(ret),level=1)
     return ret
 
 def parse_sent(sent):
@@ -134,9 +179,16 @@ def query_perms(query):
     useful permutations of groupings of the parsed terms - for searching
     :return: generator
     """
+    print("Generate variations: ",level=3)
+    indent(level=3)
     for com in groupings(query): # get every grouping of the entries. e.g: [abc],[ab,c],[a,bc],...
+        print(com,level=3)
+        indent(level=3)
         for permutation in itertools.permutations(com): # get permutations (possible orders) of the terms in grouping
+            print(grouping_str(permutation), level=3)
             yield permutation
+        unindent(level=3)
+    unindent(level=3)
 #endregion
 
 def search_pages(perms,thresh=0.2):
@@ -145,11 +197,22 @@ def search_pages(perms,thresh=0.2):
     :return: sorted: [(confidence, id),...]
     """
     search_strings=set(' '.join(str(word) for word in perm[0]) for perm in perms) # remove duplicates (minimise networking)
+
+    print('Searching for candidates:',level=1)
+    indent(level=1)
     ret=[]
     for search_string in search_strings:
+
+        print('\"'+search_string+"\"...",level=1,end='')
+        sys.stdout.flush()
+
+        count=0
         for candidate in search_wiki(search_string):
             if candidate[0]>=thresh: # confidence >= threshold
                 ret.append(candidate)
+                count+=1
+
+        print('['+str(count)+"]",level=1,indent=0)
 
     def deduplicate():
         seen=set()
@@ -159,26 +222,40 @@ def search_pages(perms,thresh=0.2):
                 yield candidate
 
     ret.sort(key=lambda x:x[0],reverse=True)
+
+    unindent(level=1)
     return list(deduplicate()) # removed duplicate titles (keep one with highest confidence score)
 
 def search(question):
     """
     :return: [(confidence, data, (title, WikipediaPage)),...]
     """
-
     for query in parse_question(question):
+        print('Query: '+str(query),level=1)
+        indent(level=1)
+
         wikipedia_pages:List[wikipedia.WikipediaPage]=[]
-        for candidate in search_pages(query_perms(query)):
+
+        candidates=search_pages(query_perms(query))
+
+        print('Downloading pages: ',level=1)
+        indent(level=1)
+
+        for candidate in candidates:
+            print(candidate if VERBOSITY>=2 else "\""+str(candidate[1])+"\"",level=1)
             wikipedia_pages.append(wikipedia.page(candidate[1]))
         #todo rank pages
         #todo extract data from pages
+
+        unindent(level=1)
 
 def rank_pages(query,wikipedia_pages):
     """
     rank the relevancy of the pages to the query, and order them accordingly
     :return: sorted: [(relevancy,WikipediaPage)...]
     """
-    # confidence/4*3 + score
+    for wikipedia_page in wikipedia_pages:
+        pass
     pass # todo
 
 def search_wiki(search_string,limit=1):
@@ -188,6 +265,8 @@ def search_wiki(search_string,limit=1):
     """
     doc1=nlp(search_string)
     for title in wikipedia.search(search_string,results=limit):
+        # print('.', level=1, end='', indent=0)
+        # sys.stdout.flush()
         yield (doc1.similarity(nlp(title)),title)
 
 
