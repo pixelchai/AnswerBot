@@ -161,16 +161,33 @@ def search_pages(perms,thresh=0.2):
         for candidate in search_wiki(search_string):
             if candidate[0]>=thresh: # confidence >= threshold
                 ret.append(candidate)
-    ret.sort(key=lambda x:x[0],reverse=True)
-    return ret
 
-def search_wiki(search_string):
+    def deduplicate():
+        seen=set()
+        for candidate in ret:
+            if not candidate[1] in seen:
+                seen.add(candidate[1])
+                yield candidate
+
+    ret.sort(key=lambda x:x[0],reverse=True)
+    return list(deduplicate()) # removed duplicate titles (keep one with highest confidence score)
+
+#todo
+# def get_pages(titles):
+#     """
+#     get Wikipedia pages from page titles
+#     :return: list of WikipediaPage objects
+#     """
+#     for title titles:
+#         yield wikipedia.page()
+
+def search_wiki(search_string,limit=1):
     """
     try find pages relating to the group
     :return: generator: [(confidence, id),...]
     """
     doc1=nlp(search_string)
-    for title in wikipedia.search(search_string):
+    for title in wikipedia.search(search_string,results=limit):
         yield (doc1.similarity(nlp(title)),title)
 
 
