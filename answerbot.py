@@ -188,6 +188,7 @@ def query_variations(query):
             yield permutation
         unindent(level=3)
     unindent(level=3)
+    if VERBOSITY==2:print("Generated variations")
 #endregion
 
 def search_pages(variations, thresh=0.2):
@@ -247,14 +248,17 @@ def search(question):
             wikipedia_pages.append((candidate[0],wikipedia.page(candidate[1])))
 
         wikipedia_pages.sort(key=lambda x:x[0], reverse=True) # sort wikipedia pages by confidence
+        unindent(level=1)
 
+        print('Analysing pages: ',level=1)
+        indent(level=3)
         for variation in variations:
-            # print(variation)
+            print(variation,level=1)
             # todo rank pages
             # todo extract data from pages
             pass
+        unindent(level=3)
 
-        unindent(level=1)
 
 def calc_relevancy(query, content_doc):
     """
