@@ -174,7 +174,7 @@ def groupings(query):
         obuf.append(buf) # flush buf to obuf
         yield obuf # flush obuf to ret
 
-def query_perms(query):
+def query_variations(query):
     """
     useful permutations of groupings of the parsed terms - for searching
     :return: generator
@@ -191,12 +191,12 @@ def query_perms(query):
     unindent(level=3)
 #endregion
 
-def search_pages(perms,thresh=0.2):
+def search_pages(variations, thresh=0.2):
     """
     find candidate pages to be analysed
     :return: sorted: [(confidence, id),...]
     """
-    search_strings=set(' '.join(str(word) for word in perm[0]) for perm in perms) # remove duplicates (minimise networking)
+    search_strings=set(' '.join(str(word) for word in variation[0]) for variation in variations) # remove duplicates (minimise networking)
 
     print('Searching for candidates:',level=1)
     indent(level=1)
@@ -234,29 +234,36 @@ def search(question):
         print('Query: '+str(query),level=1)
         indent(level=1)
 
-        wikipedia_pages:List[wikipedia.WikipediaPage]=[]
+        wikipedia_pages=[] # [(confidence, WikipediaPage)...]
+        variations=list(query_variations(query))
 
-        candidates=search_pages(query_perms(query))
+        candidates=search_pages(variations)
 
         print('Downloading pages: ',level=1)
         indent(level=1)
 
         for candidate in candidates:
             print(candidate if VERBOSITY>=2 else "\""+str(candidate[1])+"\"",level=1)
-            wikipedia_pages.append(wikipedia.page(candidate[1]))
-        #todo rank pages
-        #todo extract data from pages
+
+            wikipedia_pages.append((candidate[0],wikipedia.page(candidate[1])))
+
+        for variation in variations:
+            # print(variation)
+            # todo rank pages
+            # todo extract data from pages
+            pass
+
 
         unindent(level=1)
 
-def rank_pages(query,wikipedia_pages):
+def calc_relevancy(query, wikipedia_page: wikipedia.WikipediaPage):
     """
-    rank the relevancy of the pages to the query, and order them accordingly
-    :return: sorted: [(relevancy,WikipediaPage)...]
+    calculate the relevancy of the page to the query
+    :return: relevancy
     """
-    for wikipedia_page in wikipedia_pages:
-        pass
-    pass # todo
+    content_doc=nlp(wikipedia_page.content)
+    print(query)
+    return 0
 
 def search_wiki(search_string,limit=1):
     """
