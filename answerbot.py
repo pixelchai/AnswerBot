@@ -139,17 +139,6 @@ def query_perms(query):
             yield permutation
 #endregion
 
-# def search(question):
-#     """
-#     relevant URLs for pages (that exist), given the question
-#     NOTE: Every
-#     :return: [(confidence, (data, data_broad, content), (url, title)),...]
-#     """
-#
-#     for query in parse_question(question):
-#         for group in query_perms(query):
-#             print(str(group))
-
 def search_pages(perms,thresh=0.2):
     """
     find candidate pages to be analysed
@@ -172,14 +161,25 @@ def search_pages(perms,thresh=0.2):
     ret.sort(key=lambda x:x[0],reverse=True)
     return list(deduplicate()) # removed duplicate titles (keep one with highest confidence score)
 
-#todo
-# def get_pages(titles):
-#     """
-#     get Wikipedia pages from page titles
-#     :return: list of WikipediaPage objects
-#     """
-#     for title titles:
-#         yield wikipedia.page()
+def search(question):
+    """
+    :return: [(confidence, data, (title, WikipediaPage)),...]
+    """
+
+    for query in parse_question(question):
+        wikipedia_pages:List[wikipedia.WikipediaPage]=[]
+        for candidate in search_pages(query_perms(query)):
+            wikipedia_pages.append(wikipedia.page(candidate[1]))
+        #todo rank pages
+        #todo extract data from pages
+
+def rank_pages(query,wikipedia_pages):
+    """
+    rank the relevancy of the pages to the query, and order them accordingly
+    :return: sorted: [(relevancy,WikipediaPage)...]
+    """
+    # confidence/4*3 + score
+    pass # todo
 
 def search_wiki(search_string,limit=1):
     """
@@ -192,7 +192,5 @@ def search_wiki(search_string,limit=1):
 
 
 if __name__=='__main__':
-    for query in parse_question("the biggest animal of Europe"):
-        a=search_pages(query_perms(query))
-        pprint.pprint(a)
+    pprint.pprint(search('the biggest animal of Europe'))
     # print(search_wiki("the biggest animal of Europe"))
