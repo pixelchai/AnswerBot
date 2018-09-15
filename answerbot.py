@@ -143,7 +143,7 @@ def query_perms(query):
 #     """
 #     relevant URLs for pages (that exist), given the question
 #     NOTE: Every
-#     :return: [(confidence, (data, content), (url, title)),...]
+#     :return: [(confidence, (data, data_broad, content), (url, title)),...]
 #     """
 #
 #     for query in parse_question(question):
@@ -153,28 +153,28 @@ def query_perms(query):
 def search_pages(perms):
     """
     find candidate pages to be analysed
-    :return: [[(confidence, id),...]]
+    :return: {key:[(confidence, id),...]}
     """
-    ret=[]
+    ret={}
     for perm in perms:
         # nb rest will be perm[0:]
-
-        ret.append(search_wiki(perm[0]))
+        key=' '.join(str(word) for word in perm[0])
+        if key not in ret: # try minimise the amount of API calls (minimise networking)
+            ret[key]=(search_wiki(key))
     return ret
 
-def search_wiki(keywords:List[spacy.tokens.Token]):
+def search_wiki(search_string):
     """
     try find pages relating to the group
-    :param keywords: aka a 'group'
     :return: generator: [(confidence, id),...]
     """
-    search_string=' '.join(str(word) for word in keywords)
     doc1=nlp(search_string)
     for title in wikipedia.search(search_string):
         yield (doc1.similarity(nlp(title)),title)
 
 
 if __name__=='__main__':
-    a=(search_pages("the biggest animal of Europe"))
-    print(a)
+    for query in parse_question("the biggest animal of Europe"):
+        a=search_pages(query_perms(query))
+        pprint.pprint(a)
     # print(search_wiki("the biggest animal of Europe"))
