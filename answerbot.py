@@ -1,8 +1,11 @@
 import itertools
+from typing import List
+
 import wikipedia
 import pprint
 import spacy
 nlp=spacy.load('en_core_web_sm')
+VERBOSITY=3
 
 # region question parsing
 def fix_question(text:str):
@@ -22,6 +25,7 @@ def parse_question(text):
     ret=[]
     for sent in doc.sents:
         ret.extend(parse_sent(sent))
+    if VERBOSITY>=1: print('Parsed: '+str(ret))
     return ret
 
 def parse_sent(sent):
@@ -135,26 +139,42 @@ def query_perms(query):
             yield permutation
 #endregion
 
-def search(question):
-    """
-    relevant URLs for pages (that exist), given the question
-    :return: [(confidence, data, source),...]
-    """
+# def search(question):
+#     """
+#     relevant URLs for pages (that exist), given the question
+#     NOTE: Every
+#     :return: [(confidence, (data, content), (url, title)),...]
+#     """
+#
+#     for query in parse_question(question):
+#         for group in query_perms(query):
+#             print(str(group))
 
-    for query in parse_question(question):
-        for group in query_perms(query):
-            print(str(group))
+def search_pages(perms):
+    """
+    find candidate pages to be analysed
+    :return: [[(confidence, id),...]]
+    """
+    ret=[]
+    for perm in perms:
+        # nb rest will be perm[0:]
 
-def search_wiki(keywords):
+        ret.append(search_wiki(perm[0]))
+    return ret
+
+def search_wiki(keywords:List[spacy.tokens.Token]):
     """
     try find pages relating to the group
     :param keywords: aka a 'group'
-    :return: [(confidence, url),...]
+    :return: generator: [(confidence, id),...]
     """
-    search_string=' '.join(word for word in keywords)
-    return wikipedia.search(search_string)
+    search_string=' '.join(str(word) for word in keywords)
+    doc1=nlp(search_string)
+    for title in wikipedia.search(search_string):
+        yield (doc1.similarity(nlp(title)),title)
 
 
 if __name__=='__main__':
-    # print(search("the biggest animal of Europe"))
-    print(search_wiki("the biggest animal of Europe"))
+    a=(search_pages("the biggest animal of Europe"))
+    print(a)
+    # print(search_wiki("the biggest animal of Europe"))
