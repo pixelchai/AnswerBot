@@ -7,7 +7,7 @@ import wikipedia
 from spacy import load
 nlp=load('en_core_web_lg')
 
-VERBOSITY=1
+VERBOSITY=3
 INDENT=0
 
 #region utils
@@ -257,7 +257,7 @@ def search_wiki(search_string,limit=1):
     for title in wikipedia.search(search_string,results=limit):
         yield (doc1.similarity(nlp(title)),title)
 
-def search_candidates(variations, thresh=0.2):
+def search_candidates(variations, thresh=0.2, limit=1):
     """
     find candidate pages to be analysed
     :return: sorted: [(confidence, id),...]
@@ -273,7 +273,7 @@ def search_candidates(variations, thresh=0.2):
         sys.stdout.flush()
 
         count=0
-        for candidate in search_wiki(search_string):
+        for candidate in search_wiki(search_string,limit=limit):
             if candidate[0]>=thresh: # confidence >= threshold
                 ret.append(candidate)
                 count+=1
@@ -325,12 +325,16 @@ def search_data(grouping, spans, limit=10):
     ret=ret[:limit] # only consider top (limit)
 
     if len(grouping)>2:
-        return search_data(grouping[1:], ret) # search through ret again, but next group
+        return search_data(grouping[1:], ret, limit=limit) # search through ret again, but next group
     else:
         return ret
 
-def search(question):
+def search(question, page_thresh=0.2, page_search_limit=1, per_page_limit=10):
     """
+    :param question:
+    :param page_thresh: the minimum relevancy of a page for it to be considered
+    :param page_search_limit: num of candidates limit for each candidate search query
+    :param per_page_limit: the number of top sentences to be kept per page
     :return: {page_title:[(confidence, data, WikipediaPage),...]}
     """
     ret:Dict[str, List[Tuple]]={}
@@ -339,7 +343,7 @@ def search(question):
         indent(level=1)
 
         variations=list(query_variations(query))
-        candidates = search_candidates(variations) # sorted: [(confidence, id),...]
+        candidates = search_candidates(variations, thresh=page_thresh, limit=page_search_limit) # sorted: [(confidence, id),...]
         wikipedia_pages = download_candidates(candidates) # [(confidence, WikipediaPage, content doc)...]
 
         print('Analysing: ',level=1,end='' if VERBOSITY==1 else '\n')
@@ -358,7 +362,7 @@ def search(question):
             indent(level=2)
             for page in pages:
                 # page: (confidence, WikipediaPage, content doc)
-                for data in search_data(variation,[(0.0,x) for x in page[2].sents]): # spans start with a score of 0.0
+                for data in search_data(variation, [(0.0,x) for x in page[2].sents], limit=per_page_limit): # spans start with a score of 0.0
                     dict_key=page[1].title # ret's keys are page titles
                     newl=ret.get(dict_key,[])
                     newl.append((data[0],data[1],page)) # (confidence, data, WikipediaPage)
@@ -386,4 +390,4 @@ def search(question):
 #endregion
 
 if __name__=='__main__':
-    print_search_result(search("Harry Potter castle location"))
+    print_search_result(search("the biggest animal in Europe"))
