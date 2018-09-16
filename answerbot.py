@@ -52,8 +52,7 @@ def print_search_result(result):
         print(key)
         indent()
         for item in value:
-            print(str(item[0])+': '+json.dumps(str(item[1]))[:100],end=':')
-            print(json.dumps(str(item[1]))[:50],indent=0)
+            print(str(item[0])+': '+json.dumps(str(item[1]))[:100])
         unindent()
 
 def indent(n=1,level=None):
@@ -365,7 +364,10 @@ def search(question):
                     newl.append((data[0],data[1],page)) # (confidence, data, WikipediaPage)
                     ret[dict_key]=newl
 
-                print('.',level=1,indent=0,end='')
+                print('.',level=2,indent=0,end='')
+                sys.stdout.flush()
+            if VERBOSITY == 1:
+                print('.',indent=0,end='')
                 sys.stdout.flush()
             print('[OK]',indent=0,level=2)
             unindent(level=2) # /analysing pages
@@ -384,4 +386,4 @@ def search(question):
 #endregion
 
 if __name__=='__main__':
-    print_search_result(search('biggest animal'))
+    print_search_result(search("Harry Potter castle location"))
