@@ -234,10 +234,10 @@ def search(question):
         print('Query: '+str(query),level=1)
         indent(level=1)
 
-        wikipedia_pages=[] # [(confidence, WikipediaPage)...]
+        wikipedia_pages=[] # [(confidence, WikipediaPage, content doc)...]
         variations=list(query_variations(query))
 
-        candidates=search_pages(variations)
+        candidates=search_pages(variations) # sorted: [(confidence, id),...]
 
         print('Downloading pages: ',level=1)
         indent(level=1)
@@ -245,7 +245,8 @@ def search(question):
         for candidate in candidates:
             print(candidate if VERBOSITY>=2 else "\""+str(candidate[1])+"\"",level=1)
 
-            wikipedia_pages.append((candidate[0],wikipedia.page(candidate[1])))
+            wikipedia_page=wikipedia.page(candidate[1])
+            wikipedia_pages.append((candidate[0],wikipedia_page,nlp(wikipedia_page.content)))
 
         wikipedia_pages.sort(key=lambda x:x[0], reverse=True) # sort wikipedia pages by confidence
         unindent(level=1)
@@ -253,20 +254,42 @@ def search(question):
         print('Analysing pages: ',level=1)
         indent(level=3)
         for variation in variations:
-            print(variation,level=1)
+            print(variation,level=3)
+
+            pages=[]
+            for page in wikipedia_pages:
+                # pages.append(((add_relevancy_weighting(variation, page[2]) + page[0]) / 2.0, *page[1:])) # score now avg(relevancy,confidence)
+                pages.append(add_relevancy_weighting(variation,page))
+            pages.sort(key=lambda x: x[0], reverse=True)  # sort pages by confidence
+
+            indent(level=3)
+            for page in pages:
+                print(page[:-1],level=3)
+            unindent(level=3)
+
             # todo rank pages
             # todo extract data from pages
             pass
         unindent(level=3)
 
+# def search_data(variation, wikipedia_pages):
+#     pages
 
-def calc_relevancy(query, content_doc):
+
+def add_relevancy_weighting(grouping, page):
     """
-    calculate the relevancy of the page to the query
+    calculate the relevancy of the page to the grouping
     :return: relevancy
     """
-    print(query)
-    return 0 #todo
+    score=0.0
+    count=0.0
+    for group in grouping:
+        group_str = ' '.join([str(x) for x in group])
+        score+=page[2].similarity(nlp(group_str))
+        count+=1
+    title_score=nlp(page[1].title).similarity(nlp(' '.join([str(x) for x in grouping[0]])))
+    return (score/count + title_score,*page[1:])
+    # return (score/count + page[0],*page[1:])
 
 def search_wiki(search_string,limit=1):
     """
