@@ -251,26 +251,33 @@ def search(question):
         wikipedia_pages.sort(key=lambda x:x[0], reverse=True) # sort wikipedia pages by confidence
         unindent(level=1)
 
-        print('Analysing pages: ',level=1)
-        indent(level=3)
+        print('Analysing: ',level=1)
+        indent(level=1)
         for variation in variations:
             print(variation,level=3)
+            indent(level=3)
 
-            pages=[]
+            pages=[] # [(confidence, WikipediaPage, content doc)...]
             for page in wikipedia_pages:
                 # pages.append(((add_relevancy_weighting(variation, page[2]) + page[0]) / 2.0, *page[1:])) # score now avg(relevancy,confidence)
                 pages.append(add_relevancy_weighting(variation,page))
             pages.sort(key=lambda x: x[0], reverse=True)  # sort pages by confidence
 
+            print("Ranking: ",level=3)
             indent(level=3)
             for page in pages:
-                print(page[:-1],level=3)
+                print(page[:-1]+('<doc>',),level=3)
             unindent(level=3)
 
-            # todo rank pages
+            print("Analysing pages: ",level=2)
+            indent(level=2)
+            for page in pages:
+                print("page",level=2)
             # todo extract data from pages
-            pass
-        unindent(level=3)
+            unindent(level=2)
+
+            unindent(level=3)
+        unindent(level=1)
 
 # def search_data(variation, wikipedia_pages):
 #     pages
