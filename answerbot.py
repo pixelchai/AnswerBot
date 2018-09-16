@@ -13,7 +13,7 @@ from spacy import load
 # nlp= load('en_core_web_sm')
 nlp=load('en_core_web_lg')
 
-VERBOSITY=3
+VERBOSITY=1
 INDENT=0
 
 # region logging
@@ -279,15 +279,19 @@ def search(question):
         candidates = search_pages(variations) # sorted: [(confidence, id),...]
         wikipedia_pages = download_wikipedia_pages(candidates) # [(confidence, WikipediaPage, content doc)...]
 
-        print('Analysing: ',level=1)
+        print('Analysing: ',level=1,end='' if VERBOSITY==1 else '\n')
+        sys.stdout.flush()
         indent(level=1)
+
         for variation in variations:
             print(variation,level=3)
             indent(level=3)
 
             pages=rank_pages(variation,wikipedia_pages)
 
-            print("Analysing pages: ",level=2)
+            print("Analysing pages: ",level=2,end='')
+            sys.stdout.flush()
+
             indent(level=2)
             for page in pages:
                 a=[(0.0,x) for x in page[2].sents]
@@ -298,10 +302,16 @@ def search(question):
                     newl=ret.get(page[1].title,[])
                     newl.append((y[0],*y[1:]))
                     ret[page[1].title]=newl
-            unindent(level=2)
+                print('.',level=1,indent=0,end='')
+                sys.stdout.flush()
+            print('[OK]',indent=0,level=2)
+            unindent(level=2) # /analysing pages
 
-            unindent(level=3)
-        unindent(level=1)
+            unindent(level=3) # /variation
+        unindent(level=1) # /analysing
+        if VERBOSITY==1:
+            print('[OK]',indent=0)
+        unindent(level=1) # /query
 
     # sort and remove duplicates
     for k, v in ret.items():
@@ -361,7 +371,7 @@ def similarity(doc,group_nlp):
 if __name__=='__main__':
     # print(parse_question('The African bush elephant (Loxodonta africana), of the order Proboscidea, is the largest living land animal.)'))
 
-    result=(search('the largest living land animal'))
+    result=(search('biggest animal'))
     # result.sort(key=lambda x:x[0],reverse=True)
     # for res in result:
     #     print(res)
