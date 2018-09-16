@@ -226,34 +226,52 @@ def search_pages(variations, thresh=0.2):
     unindent(level=1)
     return list(deduplicate()) # removed duplicate titles (keep one with highest confidence score)
 
+def download_wikipedia_pages(candidates):
+    """
+    :return: [(confidence, WikipediaPage, content doc)...]
+    """
+    wikipedia_pages=[]
+    print('Downloading pages: ', level=1)
+    indent(level=1)
+
+    for candidate in candidates:
+        print(candidate if VERBOSITY >= 2 else "\"" + str(candidate[1]) + "\"", level=1)
+
+        try:
+            wikipedia_page = wikipedia.page(candidate[1])
+            wikipedia_pages.append((candidate[0], wikipedia_page, nlp(wikipedia_page.content)))
+        except wikipedia.exceptions.DisambiguationError:
+            pass
+
+    wikipedia_pages.sort(key=lambda x: x[0], reverse=True)  # sort wikipedia pages by confidence
+    unindent(level=1)
+    return wikipedia_pages
+
+def rank_pages(variation,input_pages):
+    print("Ranking: ", level=3)
+    indent(level=3)
+    pages = []  # [(confidence, WikipediaPage, content doc)...]
+    for page in input_pages:
+        # pages.append(((add_relevancy_weighting(variation, page[2]) + page[0]) / 2.0, *page[1:])) # score now avg(relevancy,confidence)
+        pages.append(add_relevancy_weighting(variation, page))
+    pages.sort(key=lambda x: x[0], reverse=True)  # sort pages by confidence
+
+    for page in pages:
+        print(page[:-1] + ('<doc>',), level=3)
+    unindent(level=3)
+    return pages
+
 def search(question):
     """
     :return: [(confidence, data, WikipediaPage),...]
     """
-    ret=[]
     for query in parse_question(question):
         print('Query: '+str(query),level=1)
         indent(level=1)
 
-        wikipedia_pages=[] # [(confidence, WikipediaPage, content doc)...]
         variations=list(query_variations(query))
-
-        candidates=search_pages(variations) # sorted: [(confidence, id),...]
-
-        print('Downloading pages: ',level=1)
-        indent(level=1)
-
-        for candidate in candidates:
-            print(candidate if VERBOSITY>=2 else "\""+str(candidate[1])+"\"",level=1)
-
-            try:
-                wikipedia_page=wikipedia.page(candidate[1])
-                wikipedia_pages.append((candidate[0],wikipedia_page,nlp(wikipedia_page.content)))
-            except wikipedia.exceptions.DisambiguationError:
-                pass
-
-        wikipedia_pages.sort(key=lambda x:x[0], reverse=True) # sort wikipedia pages by confidence
-        unindent(level=1)
+        candidates = search_pages(variations) # sorted: [(confidence, id),...]
+        wikipedia_pages = download_wikipedia_pages(candidates) # [(confidence, WikipediaPage, content doc)...]
 
         print('Analysing: ',level=1)
         indent(level=1)
@@ -261,24 +279,14 @@ def search(question):
             print(variation,level=3)
             indent(level=3)
 
-            pages=[] # [(confidence, WikipediaPage, content doc)...]
-            for page in wikipedia_pages:
-                # pages.append(((add_relevancy_weighting(variation, page[2]) + page[0]) / 2.0, *page[1:])) # score now avg(relevancy,confidence)
-                pages.append(add_relevancy_weighting(variation,page))
-            pages.sort(key=lambda x: x[0], reverse=True)  # sort pages by confidence
-
-            print("Ranking: ",level=3)
-            indent(level=3)
-            for page in pages:
-                print(page[:-1]+('<doc>',),level=3)
-            unindent(level=3)
+            pages=rank_pages(variation,wikipedia_pages)
 
             print("Analysing pages: ",level=2)
             indent(level=2)
             for page in pages:
                 # todo
                 # todo add page[0] (confidence) to every confidence and add wikipedia_page too
-                x=search_data(variation,[(0.0,x) for x in page[2].sents])[:3] # skip first grouping - that decided the page itself
+                x=search_data(variation,[(0.0,x) for x in page[2].sents])[:1] # skip first grouping - that decided the page itself
                 for y in x:
                     yield (y[0],*y[1:])
                 # yield x
@@ -290,7 +298,6 @@ def search(question):
 
             unindent(level=3)
         unindent(level=1)
-    return ret
 
 def add_relevancy_weighting(grouping, page):
     """
