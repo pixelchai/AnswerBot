@@ -1,11 +1,13 @@
 import builtins as __builtin__
 import itertools
+import string
 from typing import Dict, List, Tuple
 import json
 import sys
 import wikipedia
-from spacy import load
-nlp=load('en_core_web_lg')
+import click
+# from spacy import load
+# nlp=load('en_core_web_lg')
 
 VERBOSITY=3
 INDENT=0
@@ -46,14 +48,6 @@ def print(*args,**kwargs):
     if indt>0:
         __builtin__.print('\t'*indt,end='')
     return __builtin__.print(*args,**kwargs)
-
-def print_search_result(result):
-    for key,value in result.items():
-        print(key)
-        indent()
-        for item in value:
-            print(str(item[0])+': '+json.dumps(str(item[1]))[:100])
-        unindent()
 
 def indent(n=1,level=None):
     global INDENT
@@ -244,8 +238,16 @@ def rank_pages(grouping, input_pages):
     unindent(level=3)
     return pages
 
-def similarity(doc,group_nlp):
-    return doc.similarity(group_nlp)
+def similarity(span,group_nlp):
+    ret = span.similarity(group_nlp)
+    score=0.0
+    count=0.0
+    for keyword in parse_span(span):
+        score+=group_nlp.similarity(keyword)
+        count+=1
+    if count>0:
+        ret+=(score/count)/2.0
+    return ret
 #endregion
 
 def search_wiki(search_string,limit=1):
@@ -389,5 +391,217 @@ def search(question, page_thresh=0.2, page_search_limit=1, per_page_limit=10):
     return ret
 #endregion
 
+#region user interface
+class ResultUI:
+    """
+    provides a console user-interface for browsing a search result
+    """
+
+    def __init__(self,result,top_n=3,width=100):
+        self.result=result
+        self.top_n=top_n
+        self.width=width
+
+    def ordered_items(self):
+        """
+        get list of ranked (ordered) dictionary key-value pairs
+        """
+        return [(x,self.result[x]) for x in
+                sorted(self.result.keys(),key=lambda x:self.average_top(self.result[x]),reverse=True)]
+
+    def average_top(self,item, num=None):
+        if num is None:
+            num=self.top_n
+        score=0.0
+        for i in range(min(num,len(item))):
+            score+=item[i][0]
+        return score/num
+
+    def basic_print(self):
+        for key, value in self.ordered_items():
+            print(key)
+            indent()
+            for item in value:
+                print(str(item[0]) + ': ' + json.dumps(str(item[1]))[:100])
+            unindent()
+
+    def print_sep(self,edge=False,div=True):
+        if not edge:
+            print('|-----'+ ('|' if div else '-') + '-' * (self.width - 7 - 1) + '|')
+        else:
+            print('+-----'+('+' if div else '-') + '-' * (self.width - 7 - 1) + '+')
+
+    def print_entry(self,text,entryno):
+        print('|   ' + string.ascii_lowercase[entryno] + ' |  '
+              + text.replace('\n','\\n').replace('\r','\\r').ljust(self.width - 2 - 9)[:self.width - 2 - 9] + ' |')
+
+    def show_value(self,value):
+        click.clear()
+        print(value)
+        input('<press enter to continue>')
+
+    def show_key(self,key):
+        items=self.result.get(key,[])
+
+        if len(items)<=0:
+            print("no items, sorry")
+            input('<press enter to continue>')
+            return
+
+        while True:
+            click.clear()
+
+            # top bar
+            self.print_sep(edge=True,div=False)
+            print('| '+key.ljust(self.width-2-2)[:self.width-2-2]+' |')
+
+            # values
+            # separator
+            self.print_sep(div=False)
+            entryno = 0
+            for entry in items:
+                text = entry[1]
+                self.print_entry(text, entryno)
+                entryno += 1
+
+            # bottom bar
+            self.print_sep(edge=True)
+
+            while True:
+                try:
+                    com=input('select: ').strip()
+                    if len(com) > 1: raise ValueError
+                    if com.isalpha():
+                        index=(string.ascii_lowercase.index(com))
+                        self.show_value(self.result[key][index][1])
+                    elif com=='':
+                        return
+                    else:
+                        raise ValueError
+                except ValueError:
+                    continue
+                break
+
+    @staticmethod
+    def input_sel(error_handle=True):
+        """
+        get user input + parse
+        :return: [int,int,...]
+        """
+        while True:
+            try:
+                com=input('select: ').strip()
+                bufs=[]
+                pointer=0
+                prev_alpha=False
+                for c in com:
+                    if c.isalpha() ^ prev_alpha: # xor # if change from numerical to alpha or vice versa
+                        prev_alpha=c.isalpha()
+                        pointer+=1 # move to next buffer
+
+                    for i in range(max(pointer+1-len(bufs),0)): # resize bufs as needed
+                        bufs.append('')
+
+                    bufs[pointer]+=c
+
+                # convert to indexes
+                ret=[]
+                for buf in bufs:
+                    if buf.isalpha():
+                        if len(buf)>1: raise ValueError
+                        ret.append(string.ascii_lowercase.index(buf)) # allow raise ValueError
+                    elif buf.isnumeric():
+                        ret.append(int(buf)-1)
+                    elif buf=='':
+                        ret.append(None)
+                    else:
+                        raise ValueError
+                return ret
+            except ValueError:
+                if not error_handle: raise
+
+    def show(self):
+        #NB: max 99 results before deform
+
+        ordered_items=self.ordered_items()
+
+        if len(ordered_items)<=0:
+            print("no items, sorry")
+            input('<press enter to continue>')
+            return
+
+        while True:
+            click.clear()
+
+            # top bar
+            self.print_sep(edge=True)
+            keyno=1
+            for key,value in ordered_items:
+                if keyno>1:
+                    # above key separator
+                    self.print_sep()
+                # key
+                print('| '+str(keyno).rjust(2)+'  | '+key.ljust(self.width-2-8)[:self.width-2-8]+' |')
+
+                # values
+                if len(value)>0:
+                    # separator
+                    self.print_sep()
+                    entryno=0
+                    for entry in value:
+                        text=entry[1]
+                        if entryno>2: text='<more>'
+                        self.print_entry(text,entryno)
+                        # entry
+                        if entryno>2: break
+                        entryno+=1
+
+                keyno+=1
+            # bottom bar
+            self.print_sep(edge=True)
+
+            while True:
+                com = self.input_sel()
+                if len(com)<=0:
+                    return
+                else:
+                    try:
+                        if len(com)<=1:
+                            self.show_key([pair[0] for pair in ordered_items][com[0]])
+                        else:
+                            self.show_value(ordered_items[com[0]][1][com[1]][1])
+                    except (IndexError, TypeError):
+                        continue
+                    break
+#endreigon
+
 if __name__=='__main__':
-    print_search_result(search("the biggest animal in Europe"))
+    while True:
+        click.clear()
+        # ResultUI(search(input('>>'))).show()
+        test1={
+            'test':[
+                (0.3,'lel')
+            ]
+        }
+        test2 = {
+        }
+
+        test3={
+            'aimer':[
+                (0.9,"At the age of 15,\n\r she lost her voice due to over-usage of her vocal chords and was forced to undergo silence therapy for treatment, however that did not stop her as after she recovered, she acquired her distinctive husky voice."),
+                (0.8,"Short sentence."),
+                (0.7,'Aimer teamed up with the "Agehasprings" group, which has worked with, produced, or provided music for various artists, including Yuki, Mika Nakashima, Flumpool, Superfly, Yuzu, and Genki Rockets'),
+                (0.69,'In 2011, her musical career began in earnest.'),
+                (0.68,'In May 2011, they released the concept album Your favorite things. It covered numerous popular works, including works in various genre such as jazz and country western music.')
+            ],
+            'Mica': [
+                (0.9,
+                 "Mica is a song by Danish band Mew."),
+                (0.8, "Another short sentence."),
+            ],
+            'Emptica':[]
+        }
+
+        # print(ResultUI.input_sel())
+        ResultUI(test3).show()
