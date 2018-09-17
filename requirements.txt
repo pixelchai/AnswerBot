@@ -1,2 +1,3 @@
 spacy>=2.0.12
 wikipedia>=1.4.0
+click

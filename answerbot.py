@@ -1,13 +1,18 @@
 import builtins as __builtin__
+
+print('Loading...')
 import itertools
 import string
+import textwrap
 from typing import Dict, List, Tuple
 import json
 import sys
 import wikipedia
 import click
-# from spacy import load
-# nlp=load('en_core_web_lg')
+import shutil
+from spacy import load
+nlp=load('en_core_web_lg')
+print('[loaded]')
 
 VERBOSITY=3
 INDENT=0
@@ -397,10 +402,13 @@ class ResultUI:
     provides a console user-interface for browsing a search result
     """
 
-    def __init__(self,result,top_n=3,width=100):
+    def __init__(self,result,top_n=3,width=None):
         self.result=result
         self.top_n=top_n
-        self.width=width
+        if width is None:
+            self.width=shutil.get_terminal_size((70,30))[0]-2
+        else:
+            self.width=width
 
     def ordered_items(self):
         """
@@ -432,12 +440,13 @@ class ResultUI:
             print('+-----'+('+' if div else '-') + '-' * (self.width - 7 - 1) + '+')
 
     def print_entry(self,text,entryno):
-        print('|   ' + string.ascii_lowercase[entryno] + ' |  '
-              + text.replace('\n','\\n').replace('\r','\\r').ljust(self.width - 2 - 9)[:self.width - 2 - 9] + ' |')
+        print('|   ' + string.ascii_letters[entryno] + ' |  '
+              + str(text).replace('\n','\\n').replace('\r','\\r').ljust(self.width - 2 - 9)[:self.width - 2 - 9] + ' |')
 
     def show_value(self,value):
         click.clear()
-        print(value)
+        for line in textwrap.wrap(str(value),width=self.width):
+            print(line)
         input('<press enter to continue>')
 
     def show_key(self,key):
@@ -472,7 +481,7 @@ class ResultUI:
                     com=input('select: ').strip()
                     if len(com) > 1: raise ValueError
                     if com.isalpha():
-                        index=(string.ascii_lowercase.index(com))
+                        index=(string.ascii_letters.index(com))
                         self.show_value(self.result[key][index][1])
                     elif com=='':
                         return
@@ -509,7 +518,7 @@ class ResultUI:
                 for buf in bufs:
                     if buf.isalpha():
                         if len(buf)>1: raise ValueError
-                        ret.append(string.ascii_lowercase.index(buf)) # allow raise ValueError
+                        ret.append(string.ascii_letters.index(buf)) # allow raise ValueError
                     elif buf.isnumeric():
                         ret.append(int(buf)-1)
                     elif buf=='':
@@ -569,7 +578,12 @@ class ResultUI:
                         if len(com)<=1:
                             self.show_key([pair[0] for pair in ordered_items][com[0]])
                         else:
-                            self.show_value(ordered_items[com[0]][1][com[1]][1])
+                            if com[1]<self.top_n:
+                                self.show_value(ordered_items[com[0]][1][com[1]][1])
+                            elif com[1]==self.top_n:
+                                self.show_key([pair[0] for pair in ordered_items][com[0]])
+                            else:
+                                raise IndexError
                     except (IndexError, TypeError):
                         continue
                     break
@@ -578,30 +592,4 @@ class ResultUI:
 if __name__=='__main__':
     while True:
         click.clear()
-        # ResultUI(search(input('>>'))).show()
-        test1={
-            'test':[
-                (0.3,'lel')
-            ]
-        }
-        test2 = {
-        }
-
-        test3={
-            'aimer':[
-                (0.9,"At the age of 15,\n\r she lost her voice due to over-usage of her vocal chords and was forced to undergo silence therapy for treatment, however that did not stop her as after she recovered, she acquired her distinctive husky voice."),
-                (0.8,"Short sentence."),
-                (0.7,'Aimer teamed up with the "Agehasprings" group, which has worked with, produced, or provided music for various artists, including Yuki, Mika Nakashima, Flumpool, Superfly, Yuzu, and Genki Rockets'),
-                (0.69,'In 2011, her musical career began in earnest.'),
-                (0.68,'In May 2011, they released the concept album Your favorite things. It covered numerous popular works, including works in various genre such as jazz and country western music.')
-            ],
-            'Mica': [
-                (0.9,
-                 "Mica is a song by Danish band Mew."),
-                (0.8, "Another short sentence."),
-            ],
-            'Emptica':[]
-        }
-
-        # print(ResultUI.input_sel())
-        ResultUI(test3).show()
+        ResultUI(search(input('>'))).show()
