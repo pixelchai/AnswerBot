@@ -1,8 +1,8 @@
 # AnswerBot
-A chatbot for answering trivia questions in plain English by searching and parsing data from the internet. More info: https://makurell.github.io/projects/answerbot/
+A chatbot for answering trivia questions in plain English by searching and parsing data from the internet. More info: https://pixelzerg.github.io/projects/answerbot/
 
 # Demonstration
-[![](https://makurell.github.io/passets/5/demo2.png)](https://www.youtube.com/watch?v=8yQCvzhGDkk)
+[![](https://pixelzerg.github.io/passets/5/demo2.png)](https://www.youtube.com/watch?v=8yQCvzhGDkk)
 
 # How to Run
 Must be using Python 3 (working on 3.6).
@@ -25,5 +25,5 @@ answerbot.py
 ```
 
 # Legal
-Makurell, 2018 - github.com/makurell<br>
+PixelZerg, 2018 - github.com/pixelzerg<br>
 This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
